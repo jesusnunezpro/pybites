@@ -16,16 +16,20 @@ def num_ops(n):
     
     
     while len(operation_list) < 10000:
+        # print(operation_list)
         last_result, last_operation = operation_list[-1]
         result_set = {result for result,__ in operation_list}
+        # multiply by two until we surpass the target value
         if last_result < n and last_result*2 not in result_set:
             operation_list.append((last_result*2,"*2"))
+        # divide by 3 if we're over the target value
         elif last_result > n and last_result//3 not in result_set:
             operation_list.append((last_result//3,"//3"))
+        # if not over and not under, check if this is the value 
         elif last_result == n:
             return len(operation_list)
+        # if the calculated values have been calculated before, it's better to walk back
         elif last_result//3 in result_set or last_result*2 in result_set:
-            # if either of these results has been seen, we need to walk back to previous division
             __, last_operation = operation_list.pop()
             while last_operation == "*2" and len(operation_list)>1 and last_result*2 not in result_set:
                 last_result, last_operation = operation_list.pop()
