@@ -12,25 +12,36 @@ def num_ops(n):
 
     [Hint] the data structure is the key to solve it efficiently.
     """
-    operations = 0
-    current_value = 1
+    operation_list = [(2,"*2")]
+    
+    
+    while len(operation_list) < 10000:
+        last_result, last_operation = operation_list[-1]
+        result_set = {result for result,__ in operation_list}
+        if last_result < n and last_result*2 not in result_set:
+            operation_list.append((last_result*2,"*2"))
+        elif last_result > n and last_result//3 not in result_set:
+            operation_list.append((last_result//3,"//3"))
+        elif last_result == n:
+            return len(operation_list)
+        elif last_result//3 in result_set or last_result*2 in result_set:
+            # if either of these results has been seen, we need to walk back to previous division
+            __, last_operation = operation_list.pop()
+            while last_operation == "*2" and len(operation_list)>1 and last_result*2 not in result_set:
+                last_result, last_operation = operation_list.pop()
+                result_set.remove(last_result)
+                last_result, __ = operation_list[-1]
+            operation_list.append((last_result*2,"*2"))
 
-    while (not current_value == n) and (operations < 100):
-        if n % 2:
-            current_value = current_value*2 if current_value < n*3 else current_value//3
-        else:
-            current_value = current_value*2 if current_value < n else current_value//3
-        operations += 1
+# Tried with a different algorithm, but it still fails the following tests:
+# FAILED test_ops.py::test_num_ops[15-17] - assert 37 == 17
+# FAILED test_ops.py::test_num_ops[55-24] - assert 104 == 24
+# FAILED test_ops.py::test_num_ops[102-25] - assert 128 == 25
+# FAILED test_ops.py::test_num_ops[1985-42] - assert 2091 == 42
+# FAILED test_ops.py::test_num_ops[2020-24] - assert 350 == 24
+# FAILED test_ops.py::test_num_ops[3012-22] - assert 1484 == 22
 
-    return operations
+# I suppose the algorithm finds a solution, just not the shortest path
 
-# This algorithm just doesn't pass the tests, all failed tests got return values of 100
-# test_ops.py::test_num_ops[10-6] PASSED    
-# test_ops.py::test_num_ops[12-9] PASSED     
-# test_ops.py::test_num_ops[15-17] FAILED   
-# test_ops.py::test_num_ops[33-18] FAILED    
-# test_ops.py::test_num_ops[55-24] FAILED    
-# test_ops.py::test_num_ops[102-25] FAILED   
-# test_ops.py::test_num_ops[1985-42] FAILED 
-# test_ops.py::test_num_ops[2020-24] FAILED  
-# test_ops.py::test_num_ops[3012-22] FAILED
+# Brute force approach might not be an option given that some of these examples in the test suite go up to 42 operations
+# 2**42 = 4398046511104
