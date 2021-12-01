@@ -1,3 +1,5 @@
+import timeit
+
 def num_ops(n):
     """
     Input: an integer number, the target number
@@ -12,40 +14,28 @@ def num_ops(n):
 
     [Hint] the data structure is the key to solve it efficiently.
     """
-    operation_list = [(2,"*2")]
-    
-    
-    while len(operation_list) < 10000:
-        # print(operation_list)
-        last_result, last_operation = operation_list[-1]
-        result_set = {result for result,__ in operation_list}
-        # multiply by two until we surpass the target value
-        if last_result < n and last_result*2 not in result_set:
-            operation_list.append((last_result*2,"*2"))
-        # divide by 3 if we're over the target value
-        elif last_result > n and last_result//3 not in result_set:
-            operation_list.append((last_result//3,"//3"))
-        # if not over and not under, check if this is the value 
-        elif last_result == n:
-            return len(operation_list)
-        # if the calculated values have been calculated before, it's better to walk back
-        elif last_result//3 in result_set or last_result*2 in result_set:
-            __, last_operation = operation_list.pop()
-            while last_operation == "*2" and len(operation_list)>1 and last_result*2 not in result_set:
-                last_result, last_operation = operation_list.pop()
-                result_set.remove(last_result)
-                last_result, __ = operation_list[-1]
-            operation_list.append((last_result*2,"*2"))
+    exploration_tree = {1:[],2:[(2,"*2")]}
+    explored = {1}
+        
+    while True:
+        temp_tree = dict()
+        for result, branch in exploration_tree.items():
+            if result not in explored:
+                b1, b2 = explore_branch(branch)
+                if b1[-1][0] not in explored:
+                    temp_tree[b1[-1][0]] = b1
+                if b2[-1][0] not in explored:
+                    temp_tree[b2[-1][0]] = b2
+                explored.add(result)
+        exploration_tree.update(temp_tree)
+        if n in exploration_tree:
+            return len(exploration_tree[n])
 
-# Tried with a different algorithm, but it still fails the following tests:
-# FAILED test_ops.py::test_num_ops[15-17] - assert 37 == 17
-# FAILED test_ops.py::test_num_ops[55-24] - assert 104 == 24
-# FAILED test_ops.py::test_num_ops[102-25] - assert 128 == 25
-# FAILED test_ops.py::test_num_ops[1985-42] - assert 2091 == 42
-# FAILED test_ops.py::test_num_ops[2020-24] - assert 350 == 24
-# FAILED test_ops.py::test_num_ops[3012-22] - assert 1484 == 22
 
-# I suppose the algorithm finds a solution, just not the shortest path
-
-# Brute force approach might not be an option given that some of these examples in the test suite go up to 42 operations
-# 2**42 = 4398046511104
+def explore_branch(branch):
+    last_result, last_op = branch[-1]
+    branch1 = branch.copy()
+    branch2 = branch.copy()
+    branch1.append((last_result*2, "*2"))
+    branch2.append((last_result//3, "//3"))
+    return branch1,branch2
