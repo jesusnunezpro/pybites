@@ -8,15 +8,20 @@ from itertools import islice
 # Extracted from https://en.wikipedia.org/wiki/List_of_file_signatures
 MAGIC_IMAGE_TABLE = """
 "magic_bytes","text_representation","offset","extension","description"
-"47 49 46 38 37 61","GIF87a",0,"gif","Image file encoded in the Graphics Interchange Format (GIF)"
-"47 49 46 38 39 61","GIF89a",0,"gif","Image file encoded in the Graphics Interchange Format (GIF)"
-"FF D8 FF DB","ÿØÿÛ", "0","jpeg", "JPEG raw or in the JFIF or Exif file format"
-"FF D8 FF E0 00 10 4A 46 49 46 00 01", "ÿØÿà..JFIF..", "0","jpeg", "JPEG raw or in the JFIF or Exif file format"
-"FF D8 FF EE", "ÿØÿî", "0","jpeg", "JPEG raw or in the JFIF or Exif file format"
-"FF D8 FF E1 ?? ?? 45 78 69 66 00 00", "ÿØÿîÿØÿá..Exif..", "0","jpeg", "JPEG raw or in the JFIF or Exif file format"
+"47 49 46 38 37 61
+47 49 46 38 39 61","GIF87a
+GIF89a",0,"gif","Image file encoded in the Graphics Interchange Format (GIF)"
+"FF D8 FF DB
+FF D8 FF E0 00 10 4A 46 49 46 00 01
+FF D8 FF EE
+FF D8 FF E1 ?? ?? 45 78 69 66 00 00","ÿØÿÛ
+ÿØÿà..JFIF..
+ÿØÿîÿØÿá..Exif..",0,"jpg
+jpeg","JPEG raw or in the JFIF or Exif file format"
 "89 50 4E 47 0D 0A 1A 0A",".PNG....",0,"png","Image encoded in the Portable Network Graphics format"
-"49 49 2A 00","II*.",0,"tiff","Tagged Image File Format (TIFF)"
-"4D 4D 00 2A","MM.*",0,"tiff","Tagged Image File Format (TIFF)"
+"49 49 2A 00 (little-endian format)
+4D 4D 00 2A (big-endian format)","II*.MM.*",0,"tif
+tiff","Tagged Image File Format (TIFF)"
 "50 31 0A","P1.",0,"pbm","Portable bitmap"
 """  # noqa: E501
 
