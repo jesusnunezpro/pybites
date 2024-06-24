@@ -3,7 +3,7 @@ from io import StringIO
 import pathlib
 import csv
 from rich import print
-from itertools import batched
+from itertools import islice
 
 # Extracted from https://en.wikipedia.org/wiki/List_of_file_signatures
 MAGIC_IMAGE_TABLE = """
@@ -25,6 +25,17 @@ class FileNotRecognizedException(Exception):
     """
     File cannot be identified using a magic table
     """
+
+# Taken from https://github.com/python/cpython/issues/98363 for compatibility with Python 3.10
+def batched(iterable, n):
+      """Batch data into lists of length n. The last batch may be shorter."""
+      # batched('ABCDEFG', 3) --> ABC DEF G
+      if n < 1:
+          raise ValueError('n must be >= 1')
+      it = iter(iterable)
+      # changed list for tuple return type to make it hashable
+      while (batch := tuple(islice(it, n))):
+          yield batch
 
 
 def determine_filetype_by_magic_bytes(
@@ -58,6 +69,7 @@ def determine_filetype_by_magic_bytes(
             mask = zip(batched(magic_bytes, 2), batched(bytes_to_test, 2))
             matched = file_type
             for magic_byte, file_byte in mask:
+                print(f"{magic_byte=}")
                 if magic_byte in {('?', '?') , file_byte}:
                     continue
                 matched = None
