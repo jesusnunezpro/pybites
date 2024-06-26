@@ -1,7 +1,5 @@
 from typing import Union
-from io import StringIO
 import pathlib
-import csv
 from rich import print
 from itertools import islice
 
@@ -30,6 +28,7 @@ class FileNotRecognizedException(Exception):
     """
     File cannot be identified using a magic table
     """
+    # locate start of the data and drops the header
 
 # Taken from https://github.com/python/cpython/issues/98363 for compatibility with Python 3.10
 def batched(iterable, n):
@@ -43,6 +42,49 @@ def batched(iterable, n):
           yield batch
 
 
+def magiclist_to_dict(magic_table:str) -> list[dict]:
+    """
+    Takes in the dirty csv entry and splits it into a clean dictionary
+        expects a header like this:
+    "magic_bytes","text_representation","offset","extension","description"
+    """
+    # Here's where we will accummulate the dictionaries
+    magic_list = []
+    # locate start of the data and skips the header
+    start_point = end_point = magic_table.index("\n", 2)
+
+    while end_point < len(magic_table):
+        # locate first magic_bytes field
+        end_point = magic_table.index(',',start_point+1)
+        # print(f"{start_point=} {end_point=} {magic_table[start_point:end_point].strip()=} magic_bytes")
+        mbytes = magic_table[start_point:end_point].strip().split("\n")
+        # clean up double quotes characters
+        mbytes = [i.replace('"', '') for i in mbytes]
+        # move cursors to the next character to extract text_representation (not needed)
+        start_point = end_point + 1
+        end_point = magic_table.index(',',start_point+1)
+        # print(f"{start_point=} {end_point=} {magic_table[start_point:end_point].strip()=} text_representation <bold>NOT NEEDED</bold>")
+        # move cursors to the next character to extract offset
+        start_point = end_point + 1
+        end_point = magic_table.index(',',start_point+1)
+        # print(f"{start_point=} {end_point=} {magic_table[start_point:end_point].strip()=} offset")
+        offset = int(magic_table[start_point:end_point].strip().replace('"', ''))
+        # move cursors to the next character to extract extension (Not needed)
+        start_point = end_point + 1
+        end_point = magic_table.index(',',start_point+1)
+        # print(f"{start_point=} {end_point=} {magic_table[start_point:end_point].strip()=} extension <bold>NOT NEEDED</bold>")
+        # move cursors to the next character to extract description (separated by "\n" char)
+        start_point = end_point + 1
+        end_point = magic_table.index('\n',start_point+1)
+        # print(f"{start_point=} {end_point=} {magic_table[start_point:end_point].strip()=} description")
+        description = magic_table[start_point:end_point].strip().replace('"', '')
+        start_point = end_point + 1
+        end_point = start_point + 1
+        for mbyte in mbytes:
+            magic_list.append({'magic_bytes': mbyte, 'offset': offset, 'description': description})
+
+    return magic_list
+
 def determine_filetype_by_magic_bytes(
     file_name: Union[str, pathlib.Path],
     lookup_table_string: str = MAGIC_IMAGE_TABLE,
@@ -53,18 +95,12 @@ def determine_filetype_by_magic_bytes(
 
     Returns: file format based on the magic bytes
     """
-    csv_file = StringIO(lookup_table_string)
-    reader = csv.DictReader(
-        csv_file,
-        fieldnames=["magic_bytes","text_representation","offset","extension","description"],
-        )
-    next(reader,None)
-    magic_list = [row for row in reader]
+    magic_list = magiclist_to_dict(lookup_table_string)
     matched = None
     # print(magic_list)
     with open(file_name, "rb") as f:
         for file_type in magic_list:
-            f.seek(int(file_type['offset'].strip().replace("\"", "")))
+            f.seek(file_type['offset'])
             byte_count = len(file_type["magic_bytes"].split(" "))
             # gets a hex string representation of the bytes
             bytes_to_test = f.read(byte_count).hex().upper()
@@ -74,18 +110,14 @@ def determine_filetype_by_magic_bytes(
             mask = zip(batched(magic_bytes, 2), batched(bytes_to_test, 2))
             matched = file_type
             for magic_byte, file_byte in mask:
-                print(f"{magic_byte=}")
+                # print(f"{magic_byte=}")
                 if magic_byte in {('?', '?') , file_byte}:
                     continue
                 matched = None
                 break
             if matched:
-                return matched['description'].strip().replace("\"", "")
+                return matched['description']
     raise FileNotRecognizedException(f"{file_name} type not found")
-
-
-
-
 
 
 
